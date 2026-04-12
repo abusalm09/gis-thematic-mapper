@@ -28,6 +28,21 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      // Enforce max 3 users: check if this is a new user and if limit is reached
+      const MAX_USERS = 3;
+      const existingUser = await db.getUserByOpenId(userInfo.openId);
+      if (!existingUser) {
+        const currentCount = await db.getUserCount();
+        if (currentCount >= MAX_USERS) {
+          // Try to extract origin from state for proper redirect
+          let origin: string | null = null;
+          try { const s = JSON.parse(Buffer.from(state, 'base64').toString()); origin = s.origin || null; } catch {}
+          const redirectUrl = origin ? `${origin}/?error=user_limit` : `/?error=user_limit`;
+          res.redirect(302, redirectUrl);
+          return;
+        }
+      }
+
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,

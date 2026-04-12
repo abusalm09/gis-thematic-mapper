@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -43,74 +44,67 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  --radius: 0.5rem;
+  /* Elegant dark GIS palette - always dark */
+  --primary: oklch(0.65 0.18 200);
+  --primary-foreground: oklch(0.98 0.005 240);
+  --sidebar-primary: oklch(0.65 0.18 200);
+  --sidebar-primary-foreground: oklch(0.98 0.005 240);
+  --chart-1: oklch(0.65 0.18 200);
+  --chart-2: oklch(0.70 0.16 160);
+  --chart-3: oklch(0.72 0.14 270);
+  --chart-4: oklch(0.68 0.20 50);
+  --chart-5: oklch(0.66 0.19 320);
+  --background: oklch(0.12 0.015 240);
+  --foreground: oklch(0.92 0.01 240);
+  --card: oklch(0.16 0.015 240);
+  --card-foreground: oklch(0.92 0.01 240);
+  --popover: oklch(0.15 0.015 240);
+  --popover-foreground: oklch(0.92 0.01 240);
+  --secondary: oklch(0.22 0.015 240);
+  --secondary-foreground: oklch(0.85 0.01 240);
+  --muted: oklch(0.20 0.012 240);
+  --muted-foreground: oklch(0.55 0.01 240);
+  --accent: oklch(0.25 0.02 200);
+  --accent-foreground: oklch(0.92 0.01 240);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 240);
+  --border: oklch(0.25 0.012 240);
+  --input: oklch(0.20 0.012 240);
+  --ring: oklch(0.65 0.18 200);
+  --sidebar: oklch(0.10 0.015 240);
+  --sidebar-foreground: oklch(0.85 0.01 240);
+  --sidebar-accent: oklch(0.18 0.015 240);
+  --sidebar-accent-foreground: oklch(0.85 0.01 240);
+  --sidebar-border: oklch(0.20 0.012 240);
+  --sidebar-ring: oklch(0.65 0.18 200);
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  /* Same dark theme for .dark class */
+  --background: oklch(0.12 0.015 240);
+  --foreground: oklch(0.92 0.01 240);
+  --card: oklch(0.16 0.015 240);
+  --card-foreground: oklch(0.92 0.01 240);
+  --popover: oklch(0.15 0.015 240);
+  --popover-foreground: oklch(0.92 0.01 240);
+  --secondary: oklch(0.22 0.015 240);
+  --secondary-foreground: oklch(0.85 0.01 240);
+  --muted: oklch(0.20 0.012 240);
+  --muted-foreground: oklch(0.55 0.01 240);
+  --accent: oklch(0.25 0.02 200);
+  --accent-foreground: oklch(0.92 0.01 240);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 240);
+  --border: oklch(0.25 0.012 240);
+  --input: oklch(0.20 0.012 240);
+  --ring: oklch(0.65 0.18 200);
+  --sidebar: oklch(0.10 0.015 240);
+  --sidebar-foreground: oklch(0.85 0.01 240);
+  --sidebar-accent: oklch(0.18 0.015 240);
+  --sidebar-accent-foreground: oklch(0.85 0.01 240);
+  --sidebar-border: oklch(0.20 0.012 240);
+  --sidebar-ring: oklch(0.65 0.18 200);
 }
 
 @layer base {
@@ -118,7 +112,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -175,3 +170,74 @@
     }
   }
 }
+/* ─── GIS App Custom Styles ─────────────────────────────────────────────────── */
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: oklch(0.14 0.012 240); }
+::-webkit-scrollbar-thumb { background: oklch(0.28 0.015 240); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.38 0.015 240); }
+
+/* Status badges */
+.status-uploading { @apply bg-blue-500/15 text-blue-400; }
+.status-processing { @apply bg-amber-500/15 text-amber-400; }
+.status-ready { @apply bg-emerald-500/15 text-emerald-400; }
+.status-error { @apply bg-red-500/15 text-red-400; }
+.status-pending { @apply bg-slate-500/15 text-slate-400; }
+.status-completed { @apply bg-emerald-500/15 text-emerald-400; }
+.status-failed { @apply bg-red-500/15 text-red-400; }
+
+/* Map format badges */
+.format-shp { @apply bg-violet-500/15 text-violet-400; }
+.format-ecw { @apply bg-cyan-500/15 text-cyan-400; }
+.format-dxf { @apply bg-orange-500/15 text-orange-400; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.70 0.16 160));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card hover */
+.card-hover {
+  @apply transition-all duration-200 cursor-pointer;
+}
+.card-hover:hover {
+  border-color: oklch(0.65 0.18 200 / 0.35);
+  box-shadow: 0 4px 20px oklch(0.65 0.18 200 / 0.08);
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  background: oklch(0.14 0.015 240) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+.leaflet-control-zoom a {
+  background: oklch(0.18 0.015 240) !important;
+  color: oklch(0.85 0.01 240) !important;
+  border-color: oklch(0.25 0.012 240) !important;
+}
+.leaflet-control-zoom a:hover { background: oklch(0.25 0.015 240) !important; }
+.leaflet-popup-content-wrapper {
+  background: oklch(0.18 0.015 240) !important;
+  color: oklch(0.90 0.01 240) !important;
+  border: 1px solid oklch(0.28 0.015 240) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+}
+.leaflet-popup-tip { background: oklch(0.18 0.015 240) !important; }
+
+/* Upload dropzone */
+.dropzone-active {
+  border-color: oklch(0.65 0.18 200) !important;
+  background: oklch(0.65 0.18 200 / 0.05) !important;
+  box-shadow: 0 0 0 3px oklch(0.65 0.18 200 / 0.2);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }

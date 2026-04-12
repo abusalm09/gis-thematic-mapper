@@ -21,15 +21,23 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { Database, Map, Image, Zap, Shield, Globe, LayoutGrid, LogOut, PanelLeft } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+const mainMenuItems = [
+  { icon: Database, label: "Datasets", path: "/datasets" },
+  { icon: Globe, label: "Map Viewer", path: "/map-viewer" },
+  { icon: LayoutGrid, label: "Map Request", path: "/map-request" },
+  { icon: Image, label: "Gallery", path: "/gallery" },
+  { icon: Zap, label: "Automation", path: "/automation" },
+];
+
+const adminMenuItems = [
+  { icon: Shield, label: "Admin Panel", path: "/admin" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -112,7 +120,10 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const { data: me } = trpc.auth.me.useQuery();
+  const isAdmin = me?.role === "admin";
+  const allMenuItems = isAdmin ? [...mainMenuItems, ...adminMenuItems] : mainMenuItems;
+  const activeMenuItem = allMenuItems.find(item => location.startsWith(item.path));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -170,8 +181,9 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                  <Map className="h-5 w-5 text-primary shrink-0" />
+                  <span className="font-bold tracking-tight truncate text-foreground">
+                    GIS Mapper
                   </span>
                 </div>
               ) : null}
@@ -180,8 +192,8 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
-                const isActive = location === item.path;
+              {mainMenuItems.map(item => {
+                const isActive = location.startsWith(item.path);
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -199,6 +211,28 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
+            {isAdmin && (
+              <SidebarMenu className="px-2 py-1 mt-auto border-t border-border/40 pt-2">
+                {adminMenuItems.map(item => {
+                  const isActive = location.startsWith(item.path);
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className={`h-10 transition-all font-normal`}
+                      >
+                        <item.icon
+                          className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                        />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="p-3">
@@ -257,7 +291,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </>
   );

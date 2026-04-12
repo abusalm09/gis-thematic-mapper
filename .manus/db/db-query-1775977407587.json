@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `automationRules` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `name` varchar(255) NOT NULL, `description` text, `datasetId` int, `mapType` varchar(64), `scheduleType` enum('manual','daily','weekly','monthly') DEFAULT 'manual', `scheduleConfig` json, `isActive` boolean DEFAULT true, `lastRunAt` timestamp NULL, `nextRunAt` timestamp NULL, `runCount` int DEFAULT 0, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `automationRules_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4XPMcD5JEiKVJMN.08c3659c27b7 --database gSxYvBjvBuVxgFq2rkQiib --execute CREATE TABLE IF NOT EXISTS `automationRules` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `name` varchar(255) NOT NULL, `description` text, `datasetId` int, `mapType` varchar(64), `scheduleType` enum('manual','daily','weekly','monthly') DEFAULT 'manual', `scheduleConfig` json, `isActive` boolean DEFAULT true, `lastRunAt` timestamp NULL, `nextRunAt` timestamp NULL, `runCount` int DEFAULT 0, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `automationRules_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1686
+}

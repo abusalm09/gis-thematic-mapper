@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `datasets` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `name` varchar(255) NOT NULL, `originalFilename` varchar(255) NOT NULL, `format` enum('SHP','ECW','DXF') NOT NULL, `fileKey` varchar(512) NOT NULL, `fileUrl` text NOT NULL, `geojsonKey` varchar(512), `geojsonUrl` text, `fileSizeBytes` bigint, `featureCount` int, `geometryType` varchar(64), `crs` varchar(128), `originalCrs` varchar(128), `bbox` json, `attributes` json, `status` enum('uploading','processing','ready','error') NOT NULL DEFAULT 'uploading', `errorMessage` text, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `datasets_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4XPMcD5JEiKVJMN.08c3659c27b7 --database gSxYvBjvBuVxgFq2rkQiib --execute CREATE TABLE IF NOT EXISTS `datasets` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `name` varchar(255) NOT NULL, `originalFilename` varchar(255) NOT NULL, `format` enum('SHP','ECW','DXF') NOT NULL, `fileKey` varchar(512) NOT NULL, `fileUrl` text NOT NULL, `geojsonKey` varchar(512), `geojsonUrl` text, `fileSizeBytes` bigint, `featureCount` int, `geometryType` varchar(64), `crs` varchar(128), `originalCrs` varchar(128), `bbox` json, `attributes` json, `status` enum('uploading','processing','ready','error') NOT NULL DEFAULT 'uploading', `errorMessage` text, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `datasets_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1656
+}
