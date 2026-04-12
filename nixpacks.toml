@@ -1,0 +1,23 @@
+[phases.setup]
+nixPkgs = [
+  "nodejs_22",
+  "cairo",
+  "pango",
+  "libpng",
+  "libjpeg",
+  "giflib",
+  "librsvg",
+  "pixman",
+  "pkg-config",
+  "python3",
+  "gdal",
+]
+
+[phases.install]
+cmds = ["npm install -g pnpm && pnpm install"]
+
+[phases.build]
+cmds = ["pnpm build"]
+
+[start]
+cmd = "node dist/index.js"
