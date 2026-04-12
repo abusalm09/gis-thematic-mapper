@@ -29,6 +29,20 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
+# Declare build-time args for VITE variables (must be present at build time)
+ARG VITE_APP_ID
+ARG VITE_OAUTH_PORTAL_URL
+ARG VITE_FRONTEND_FORGE_API_URL
+ARG VITE_FRONTEND_FORGE_API_KEY
+ARG VITE_APP_TITLE
+
+# Export them as env vars so Vite picks them up during build
+ENV VITE_APP_ID=$VITE_APP_ID
+ENV VITE_OAUTH_PORTAL_URL=$VITE_OAUTH_PORTAL_URL
+ENV VITE_FRONTEND_FORGE_API_URL=$VITE_FRONTEND_FORGE_API_URL
+ENV VITE_FRONTEND_FORGE_API_KEY=$VITE_FRONTEND_FORGE_API_KEY
+ENV VITE_APP_TITLE=$VITE_APP_TITLE
+
 # Build the application
 RUN pnpm build
 
