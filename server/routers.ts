@@ -6,12 +6,14 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getAllUsers, getUserCount,
+  getUserByEmail, createUserWithPassword,
   getDatasetsByUser, getAllDatasets, getDatasetById, deleteDataset, getDatasetCount,
   getMapRequestsByUser, getAllMapRequests, createMapRequest, updateMapRequest,
   getGeneratedMapsByUser, getAllGeneratedMaps, getGeneratedMapById, getGeneratedMapByRequestId, getGeneratedMapCount,
   getAutomationRulesByUser, getAllAutomationRules, createAutomationRule, updateAutomationRule, deleteAutomationRule,
   getRecentActivity, logActivity,
 } from "./db";
+import bcrypt from "bcryptjs";
 import { processQueue } from "./gis/queue";
 
 const MAX_USERS = 3;
@@ -34,6 +36,52 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await getUserByEmail(input.email);
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+        }
+        const valid = await bcrypt.compare(input.password, user.passwordHash);
+        if (!valid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+        }
+        const { sdk } = await import("./_core/sdk");
+        const { ONE_YEAR_MS } = await import("@shared/const");
+        const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        return { success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+      }),
+    register: publicProcedure
+      .input(z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6) }))
+      .mutation(async ({ ctx, input }) => {
+        const count = await getUserCount();
+        if (count >= MAX_USERS) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Maximum user limit (3) reached" });
+        }
+        const existing = await getUserByEmail(input.email);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Email already registered" });
+        }
+        const passwordHash = await bcrypt.hash(input.password, 10);
+        const isFirstUser = count === 0;
+        await createUserWithPassword({
+          name: input.name,
+          email: input.email,
+          passwordHash,
+          role: isFirstUser ? 'admin' : 'user',
+        });
+        const user = await getUserByEmail(input.email);
+        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { sdk } = await import("./_core/sdk");
+        const { ONE_YEAR_MS } = await import("@shared/const");
+        const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        return { success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+      }),
   }),
 
   // ─── Datasets ───────────────────────────────────────────────────────────────

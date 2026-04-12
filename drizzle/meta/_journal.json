@@ -15,6 +15,13 @@
       "when": 1775977374453,
       "tag": "0001_neat_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1776006050734,
+      "tag": "0002_needy_northstar",
+      "breakpoints": true
     }
   ]
 }

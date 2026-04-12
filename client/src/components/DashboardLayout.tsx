@@ -55,6 +55,7 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -78,7 +79,7 @@ export default function DashboardLayout({
           </div>
           <Button
             onClick={() => {
-              window.location.href = getLoginUrl();
+              navigate("/");
             }}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"

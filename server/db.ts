@@ -63,6 +63,41 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createUserWithPassword(data: {
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: 'user' | 'admin';
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Use email as openId for password-based users (prefixed to avoid collision)
+  const openId = `email:${data.email}`;
+  const result = await db.insert(users).values({
+    openId,
+    name: data.name,
+    email: data.email,
+    passwordHash: data.passwordHash,
+    loginMethod: 'password',
+    role: data.role,
+    lastSignedIn: new Date(),
+  });
+  return (result[0] as unknown as { insertId: number }).insertId;
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];

@@ -1,8 +1,11 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { Map, Layers, BarChart3, Upload, Shield, Zap, Globe2, ChevronRight } from "lucide-react";
+import { Map, Layers, BarChart3, Upload, Shield, Zap, Globe2, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 const features = [
   {
@@ -49,13 +52,236 @@ const features = [
   },
 ];
 
+type AuthMode = "landing" | "login" | "register";
+
 export default function Home() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
+  const [mode, setMode] = useState<AuthMode>("landing");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Register form state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+
+  const utils = trpc.useUtils();
+
+  const loginMutation = trpc.auth.login.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+      navigate("/datasets");
+    },
+    onError: (e) => setError(e.message),
+  });
+
+  const registerMutation = trpc.auth.register.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+      navigate("/datasets");
+    },
+    onError: (e) => setError(e.message),
+  });
 
   if (!loading && isAuthenticated) {
     navigate("/datasets");
     return null;
+  }
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    loginMutation.mutate({ email: loginEmail, password: loginPassword });
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    registerMutation.mutate({ name: regName, email: regEmail, password: regPassword });
+  };
+
+  // Auth form overlay
+  if (mode === "login" || mode === "register") {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
+        <div
+          className="fixed inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(oklch(0.65 0.18 200) 1px, transparent 1px), linear-gradient(90deg, oklch(0.65 0.18 200) 1px, transparent 1px)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+        <div className="relative z-10 w-full max-w-sm">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+              <Globe2 className="w-6 h-6 text-primary" />
+            </div>
+            <span className="text-xl font-semibold text-foreground">GIS Thematic Mapper</span>
+          </div>
+
+          <div className="bg-card border border-border/60 rounded-2xl p-8 shadow-xl">
+            <h2 className="text-xl font-bold text-foreground mb-1">
+              {mode === "login" ? "Sign in to your account" : "Create an account"}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              {mode === "login"
+                ? "Enter your credentials to access the platform"
+                : "Register to start managing spatial data"}
+            </p>
+
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                {error}
+              </div>
+            )}
+
+            {mode === "login" ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm text-foreground/80">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                    className="bg-background/50"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-sm text-foreground/80">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-sm text-foreground/80">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    required
+                    className="bg-background/50"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-email" className="text-sm text-foreground/80">Email</Label>
+                  <Input
+                    id="reg-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    required
+                    className="bg-background/50"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-password" className="text-sm text-foreground/80">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="reg-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Min. 6 characters"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={registerMutation.isPending}
+                >
+                  {registerMutation.isPending ? "Creating account..." : "Create Account"}
+                </Button>
+              </form>
+            )}
+
+            <div className="mt-5 text-center text-sm text-muted-foreground">
+              {mode === "login" ? (
+                <>
+                  Don't have an account?{" "}
+                  <button
+                    onClick={() => { setMode("register"); setError(""); }}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Register
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => { setMode("login"); setError(""); }}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => { setMode("landing"); setError(""); }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                ← Back to home
+              </button>
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            Max 3 users · First user becomes admin
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -79,7 +305,7 @@ export default function Home() {
         </div>
         {!loading && !isAuthenticated && (
           <Button
-            onClick={() => window.location.href = getLoginUrl()}
+            onClick={() => setMode("login")}
             size="sm"
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
@@ -123,7 +349,7 @@ export default function Home() {
         ) : (
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
-              onClick={() => window.location.href = getLoginUrl()}
+              onClick={() => setMode("register")}
               size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8"
             >
@@ -134,7 +360,7 @@ export default function Home() {
               variant="outline"
               size="lg"
               className="border-border/60 text-muted-foreground hover:text-foreground hover:border-border px-8"
-              onClick={() => window.location.href = getLoginUrl()}
+              onClick={() => setMode("login")}
             >
               Sign In
             </Button>
