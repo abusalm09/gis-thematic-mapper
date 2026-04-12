@@ -9,6 +9,29 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { createUploadRouter } from "../uploadRoute";
 import { startQueueProcessor } from "../gis/queue";
+import { migrate } from "drizzle-orm/mysql2/migrator";
+import { drizzle } from "drizzle-orm/mysql2";
+import path from "path";
+import { fileURLToPath } from "url";
+
+async function runMigrations() {
+  if (!process.env.DATABASE_URL) {
+    console.log("[Migration] DATABASE_URL not set, skipping migrations");
+    return;
+  }
+  try {
+    console.log("[Migration] Running database migrations...");
+    const db = drizzle(process.env.DATABASE_URL);
+    // Use process.cwd() which is /app in Railway Docker container
+    // In development (tsx from project root), cwd is also the project root
+    const migrationsFolder = path.resolve(process.cwd(), "drizzle");
+    await migrate(db, { migrationsFolder });
+    console.log("[Migration] Migrations completed successfully");
+  } catch (error) {
+    console.error("[Migration] Migration failed:", error);
+    // Don't crash the server on migration failure - tables may already exist
+  }
+}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -30,6 +53,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // Run migrations before starting the server
+  await runMigrations();
+
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
