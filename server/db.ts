@@ -1,5 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js"; // <-- Diubah ke driver Postgres
+import postgres from "postgres"; // <-- Import library postgres yang baru Anda install
 import {
   InsertUser, users,
   datasets, Dataset, InsertDataset,
@@ -11,11 +12,15 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let queryClient: postgres.Sql<{}> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      if (!queryClient) {
+        queryClient = postgres(process.env.DATABASE_URL, { prepare: false });
+      }
+      _db = drizzle(queryClient);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -49,7 +54,14 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     else if (user.openId === ENV.ownerOpenId) { values.role = 'admin'; updateSet.role = 'admin'; }
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+    
+    // PERUBAHAN: PostgreSQL menggunakan onConflictDoUpdate
+    await db.insert(users)
+      .values(values)
+      .onConflictDoUpdate({ 
+        target: users.openId, 
+        set: updateSet 
+      });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -78,8 +90,9 @@ export async function createUserWithPassword(data: {
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  // Use email as openId for password-based users (prefixed to avoid collision)
   const openId = `email:${data.email}`;
+  
+  // PERUBAHAN: PostgreSQL mengambil ID menggunakan .returning()
   const result = await db.insert(users).values({
     openId,
     name: data.name,
@@ -88,8 +101,9 @@ export async function createUserWithPassword(data: {
     loginMethod: 'password',
     role: data.role,
     lastSignedIn: new Date(),
-  });
-  return (result[0] as unknown as { insertId: number }).insertId;
+  }).returning({ id: users.id });
+  
+  return result[0].id;
 }
 
 export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
@@ -116,8 +130,9 @@ export async function getUserCount() {
 export async function createDataset(data: InsertDataset): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(datasets).values(data);
-  return (result[0] as unknown as { insertId: number }).insertId;
+  // PERUBAHAN: PostgreSQL mengambil ID menggunakan .returning()
+  const result = await db.insert(datasets).values(data).returning({ id: datasets.id });
+  return result[0].id;
 }
 
 export async function getDatasetById(id: number): Promise<Dataset | undefined> {
@@ -163,8 +178,8 @@ export async function getDatasetCount() {
 export async function createMapRequest(data: InsertMapRequest): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(mapRequests).values(data);
-  return (result[0] as unknown as { insertId: number }).insertId;
+  const result = await db.insert(mapRequests).values(data).returning({ id: mapRequests.id });
+  return result[0].id;
 }
 
 export async function getMapRequestById(id: number): Promise<MapRequest | undefined> {
@@ -205,8 +220,8 @@ export async function updateMapRequest(id: number, data: Partial<InsertMapReques
 export async function createGeneratedMap(data: InsertGeneratedMap): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(generatedMaps).values(data);
-  return (result[0] as unknown as { insertId: number }).insertId;
+  const result = await db.insert(generatedMaps).values(data).returning({ id: generatedMaps.id });
+  return result[0].id;
 }
 
 export async function getGeneratedMapById(id: number): Promise<GeneratedMap | undefined> {
@@ -247,8 +262,8 @@ export async function getGeneratedMapCount() {
 export async function createAutomationRule(data: InsertAutomationRule): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(automationRules).values(data);
-  return (result[0] as unknown as { insertId: number }).insertId;
+  const result = await db.insert(automationRules).values(data).returning({ id: automationRules.id });
+  return result[0].id;
 }
 
 export async function getAutomationRulesByUser(userId: number): Promise<AutomationRule[]> {
