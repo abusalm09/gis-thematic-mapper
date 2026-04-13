@@ -9,7 +9,7 @@ import {
   doublePrecision,
   boolean,
   integer,
-  customType,
+  customType
 } from "drizzle-orm/pg-core";
 
 // Custom type untuk PostGIS Geometry
