@@ -8,7 +8,7 @@ import {
   bigint,
   doublePrecision,
   boolean,
-  integer, // Tambahan: Tipe data angka biasa
+  integer,
   customType
 } from "drizzle-orm/pg-core";
 
