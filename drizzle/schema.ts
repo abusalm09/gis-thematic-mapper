@@ -1,26 +1,42 @@
 import {
-  int,
-  mysqlEnum,
-  mysqlTable,
+  pgTable,
+  serial,
   text,
-  timestamp,
   varchar,
-  json,
+  timestamp,
+  jsonb,
   bigint,
-  float,
+  doublePrecision,
   boolean,
-} from "drizzle-orm/mysql-core";
+  customType
+} from "drizzle-orm/pg-core";
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+// Custom type untuk PostGIS Geometry (sangat penting untuk data SHP/ECW/DXF)
+const geometry = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return 'geometry(Geometry, 4326)'; // Format EPSG:4326 (WGS 84) standar pemetaan
+  },
+});
+
+// Sistem ENUM PostgreSQL dibuat secara eksplisit
+export const roleEnum = ["user", "admin"] as const;
+export const datasetFormatEnum = ["SHP", "ECW", "DXF"] as const;
+export const datasetStatusEnum = ["uploading", "processing", "ready", "error"] as const;
+export const mapTypeEnum = ["choropleth", "heatmap", "proportional_symbol"] as const;
+export const classMethodEnum = ["equal_interval", "quantile", "natural_breaks", "standard_deviation"] as const;
+export const requestStatusEnum = ["pending", "processing", "completed", "failed"] as const;
+export const scheduleTypeEnum = ["manual", "daily", "weekly", "monthly"] as const;
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: varchar("role", { length: 20 }).$type<typeof roleEnum[number]>().default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(), // PostgreSQL di Drizzle butuh trigger terpisah untuk onUpdateNow
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
@@ -28,67 +44,69 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // Spatial datasets uploaded by users
-export const datasets = mysqlTable("datasets", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+export const datasets = pgTable("datasets", {
+  id: serial("id").primaryKey(),
+  userId: serial("userId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   originalFilename: varchar("originalFilename", { length: 255 }).notNull(),
-  format: mysqlEnum("format", ["SHP", "ECW", "DXF"]).notNull(),
+  format: varchar("format", { length: 10 }).$type<typeof datasetFormatEnum[number]>().notNull(),
   fileKey: varchar("fileKey", { length: 512 }).notNull(),
   fileUrl: text("fileUrl").notNull(),
   geojsonKey: varchar("geojsonKey", { length: 512 }),
   geojsonUrl: text("geojsonUrl"),
   fileSizeBytes: bigint("fileSizeBytes", { mode: "number" }),
-  featureCount: int("featureCount"),
+  featureCount: serial("featureCount"),
   geometryType: varchar("geometryType", { length: 64 }),
   crs: varchar("crs", { length: 128 }),
   originalCrs: varchar("originalCrs", { length: 128 }),
-  bbox: json("bbox").$type<[number, number, number, number] | null>(),
-  attributes: json("attributes").$type<string[]>(),
-  status: mysqlEnum("status", ["uploading", "processing", "ready", "error"]).default("uploading").notNull(),
+  bbox: jsonb("bbox").$type<[number, number, number, number] | null>(),
+  attributes: jsonb("attributes").$type<string[]>(),
+  // OPSI TAMBAHAN (Wajib untuk GIS): Kolom untuk menyimpan data poligon asli
+  geom: geometry("geom"), 
+  status: varchar("status", { length: 20 }).$type<typeof datasetStatusEnum[number]>().default("uploading").notNull(),
   errorMessage: text("errorMessage"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type Dataset = typeof datasets.$inferSelect;
 export type InsertDataset = typeof datasets.$inferInsert;
 
 // Thematic map generation requests
-export const mapRequests = mysqlTable("mapRequests", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  datasetId: int("datasetId").notNull(),
+export const mapRequests = pgTable("mapRequests", {
+  id: serial("id").primaryKey(),
+  userId: serial("userId").notNull(),
+  datasetId: serial("datasetId").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
-  mapType: mysqlEnum("mapType", ["choropleth", "heatmap", "proportional_symbol"]).notNull(),
+  mapType: varchar("mapType", { length: 50 }).$type<typeof mapTypeEnum[number]>().notNull(),
   attributeField: varchar("attributeField", { length: 128 }),
-  classificationMethod: mysqlEnum("classificationMethod", ["equal_interval", "quantile", "natural_breaks", "standard_deviation"]).default("quantile"),
-  numClasses: int("numClasses").default(5),
+  classificationMethod: varchar("classificationMethod", { length: 50 }).$type<typeof classMethodEnum[number]>().default("quantile"),
+  numClasses: serial("numClasses").default(5),
   colorScheme: varchar("colorScheme", { length: 64 }).default("YlOrRd"),
   colorReverse: boolean("colorReverse").default(false),
-  opacity: float("opacity").default(0.8),
+  opacity: doublePrecision("opacity").default(0.8),
   strokeColor: varchar("strokeColor", { length: 32 }).default("#ffffff"),
-  strokeWidth: float("strokeWidth").default(0.5),
+  strokeWidth: doublePrecision("strokeWidth").default(0.5),
   showLegend: boolean("showLegend").default(true),
   showLabels: boolean("showLabels").default(false),
   labelField: varchar("labelField", { length: 128 }),
-  customOptions: json("customOptions").$type<Record<string, unknown>>(),
-  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  customOptions: jsonb("customOptions").$type<Record<string, unknown>>(),
+  status: varchar("status", { length: 20 }).$type<typeof requestStatusEnum[number]>().default("pending").notNull(),
   errorMessage: text("errorMessage"),
-  priority: int("priority").default(0),
+  priority: serial("priority").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type MapRequest = typeof mapRequests.$inferSelect;
 export type InsertMapRequest = typeof mapRequests.$inferInsert;
 
 // Generated thematic maps (output)
-export const generatedMaps = mysqlTable("generatedMaps", {
-  id: int("id").autoincrement().primaryKey(),
-  requestId: int("requestId").notNull(),
-  userId: int("userId").notNull(),
-  datasetId: int("datasetId").notNull(),
+export const generatedMaps = pgTable("generatedMaps", {
+  id: serial("id").primaryKey(),
+  requestId: serial("requestId").notNull(),
+  userId: serial("userId").notNull(),
+  datasetId: serial("datasetId").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   mapType: varchar("mapType", { length: 64 }).notNull(),
   thumbnailKey: varchar("thumbnailKey", { length: 512 }),
@@ -99,11 +117,11 @@ export const generatedMaps = mysqlTable("generatedMaps", {
   pdfUrl: text("pdfUrl"),
   geojsonKey: varchar("geojsonKey", { length: 512 }),
   geojsonUrl: text("geojsonUrl"),
-  mapConfig: json("mapConfig").$type<Record<string, unknown>>(),
-  legendData: json("legendData").$type<Array<{ label: string; color: string; value?: number }>>(),
-  stats: json("stats").$type<Record<string, unknown>>(),
-  width: int("width").default(1200),
-  height: int("height").default(800),
+  mapConfig: jsonb("mapConfig").$type<Record<string, unknown>>(),
+  legendData: jsonb("legendData").$type<Array<{ label: string; color: string; value?: number }>>(),
+  stats: jsonb("stats").$type<Record<string, unknown>>(),
+  width: serial("width").default(1200),
+  height: serial("height").default(800),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -111,34 +129,34 @@ export type GeneratedMap = typeof generatedMaps.$inferSelect;
 export type InsertGeneratedMap = typeof generatedMaps.$inferInsert;
 
 // Automation rules for scheduled map generation
-export const automationRules = mysqlTable("automationRules", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+export const automationRules = pgTable("automationRules", {
+  id: serial("id").primaryKey(),
+  userId: serial("userId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  datasetId: int("datasetId"),
+  datasetId: serial("datasetId"),
   mapType: varchar("mapType", { length: 64 }),
-  scheduleType: mysqlEnum("scheduleType", ["manual", "daily", "weekly", "monthly"]).default("manual"),
-  scheduleConfig: json("scheduleConfig").$type<Record<string, unknown>>(),
+  scheduleType: varchar("scheduleType", { length: 20 }).$type<typeof scheduleTypeEnum[number]>().default("manual"),
+  scheduleConfig: jsonb("scheduleConfig").$type<Record<string, unknown>>(),
   isActive: boolean("isActive").default(true),
   lastRunAt: timestamp("lastRunAt"),
   nextRunAt: timestamp("nextRunAt"),
-  runCount: int("runCount").default(0),
+  runCount: serial("runCount").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type AutomationRule = typeof automationRules.$inferSelect;
 export type InsertAutomationRule = typeof automationRules.$inferInsert;
 
 // System activity log
-export const activityLog = mysqlTable("activityLog", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId"),
+export const activityLog = pgTable("activityLog", {
+  id: serial("id").primaryKey(),
+  userId: serial("userId"),
   action: varchar("action", { length: 128 }).notNull(),
   entityType: varchar("entityType", { length: 64 }),
-  entityId: int("entityId"),
-  details: json("details").$type<Record<string, unknown>>(),
+  entityId: serial("entityId"),
+  details: jsonb("details").$type<Record<string, unknown>>(),
   ipAddress: varchar("ipAddress", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
