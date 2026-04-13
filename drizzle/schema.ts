@@ -8,17 +8,17 @@ import {
   bigint,
   doublePrecision,
   boolean,
+  integer, // Tambahan: Tipe data angka biasa
   customType
 } from "drizzle-orm/pg-core";
 
-// Custom type untuk PostGIS Geometry (sangat penting untuk data SHP/ECW/DXF)
+// Custom type untuk PostGIS Geometry
 const geometry = customType<{ data: string; driverData: string }>({
   dataType() {
-    return 'geometry(Geometry, 4326)'; // Format EPSG:4326 (WGS 84) standar pemetaan
+    return 'geometry(Geometry, 4326)';
   },
 });
 
-// Sistem ENUM PostgreSQL dibuat secara eksplisit
 export const roleEnum = ["user", "admin"] as const;
 export const datasetFormatEnum = ["SHP", "ECW", "DXF"] as const;
 export const datasetStatusEnum = ["uploading", "processing", "ready", "error"] as const;
@@ -36,17 +36,13 @@ export const users = pgTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: varchar("role", { length: 20 }).$type<typeof roleEnum[number]>().default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(), // PostgreSQL di Drizzle butuh trigger terpisah untuk onUpdateNow
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-
-// Spatial datasets uploaded by users
 export const datasets = pgTable("datasets", {
   id: serial("id").primaryKey(),
-  userId: serial("userId").notNull(),
+  userId: integer("userId").notNull(), // Perubahan: integer (bukan serial)
   name: varchar("name", { length: 255 }).notNull(),
   originalFilename: varchar("originalFilename", { length: 255 }).notNull(),
   format: varchar("format", { length: 10 }).$type<typeof datasetFormatEnum[number]>().notNull(),
@@ -55,13 +51,12 @@ export const datasets = pgTable("datasets", {
   geojsonKey: varchar("geojsonKey", { length: 512 }),
   geojsonUrl: text("geojsonUrl"),
   fileSizeBytes: bigint("fileSizeBytes", { mode: "number" }),
-  featureCount: serial("featureCount"),
+  featureCount: integer("featureCount"), // Perubahan: integer
   geometryType: varchar("geometryType", { length: 64 }),
   crs: varchar("crs", { length: 128 }),
   originalCrs: varchar("originalCrs", { length: 128 }),
   bbox: jsonb("bbox").$type<[number, number, number, number] | null>(),
   attributes: jsonb("attributes").$type<string[]>(),
-  // OPSI TAMBAHAN (Wajib untuk GIS): Kolom untuk menyimpan data poligon asli
   geom: geometry("geom"), 
   status: varchar("status", { length: 20 }).$type<typeof datasetStatusEnum[number]>().default("uploading").notNull(),
   errorMessage: text("errorMessage"),
@@ -69,19 +64,15 @@ export const datasets = pgTable("datasets", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export type Dataset = typeof datasets.$inferSelect;
-export type InsertDataset = typeof datasets.$inferInsert;
-
-// Thematic map generation requests
 export const mapRequests = pgTable("mapRequests", {
   id: serial("id").primaryKey(),
-  userId: serial("userId").notNull(),
-  datasetId: serial("datasetId").notNull(),
+  userId: integer("userId").notNull(), // Perubahan: integer
+  datasetId: integer("datasetId").notNull(), // Perubahan: integer
   title: varchar("title", { length: 255 }).notNull(),
   mapType: varchar("mapType", { length: 50 }).$type<typeof mapTypeEnum[number]>().notNull(),
   attributeField: varchar("attributeField", { length: 128 }),
   classificationMethod: varchar("classificationMethod", { length: 50 }).$type<typeof classMethodEnum[number]>().default("quantile"),
-  numClasses: serial("numClasses").default(5),
+  numClasses: integer("numClasses").default(5), // Perubahan: integer
   colorScheme: varchar("colorScheme", { length: 64 }).default("YlOrRd"),
   colorReverse: boolean("colorReverse").default(false),
   opacity: doublePrecision("opacity").default(0.8),
@@ -93,20 +84,16 @@ export const mapRequests = pgTable("mapRequests", {
   customOptions: jsonb("customOptions").$type<Record<string, unknown>>(),
   status: varchar("status", { length: 20 }).$type<typeof requestStatusEnum[number]>().default("pending").notNull(),
   errorMessage: text("errorMessage"),
-  priority: serial("priority").default(0),
+  priority: integer("priority").default(0), // Perubahan: integer
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export type MapRequest = typeof mapRequests.$inferSelect;
-export type InsertMapRequest = typeof mapRequests.$inferInsert;
-
-// Generated thematic maps (output)
 export const generatedMaps = pgTable("generatedMaps", {
   id: serial("id").primaryKey(),
-  requestId: serial("requestId").notNull(),
-  userId: serial("userId").notNull(),
-  datasetId: serial("datasetId").notNull(),
+  requestId: integer("requestId").notNull(), // Perubahan: integer
+  userId: integer("userId").notNull(), // Perubahan: integer
+  datasetId: integer("datasetId").notNull(), // Perubahan: integer
   title: varchar("title", { length: 255 }).notNull(),
   mapType: varchar("mapType", { length: 64 }).notNull(),
   thumbnailKey: varchar("thumbnailKey", { length: 512 }),
@@ -120,45 +107,47 @@ export const generatedMaps = pgTable("generatedMaps", {
   mapConfig: jsonb("mapConfig").$type<Record<string, unknown>>(),
   legendData: jsonb("legendData").$type<Array<{ label: string; color: string; value?: number }>>(),
   stats: jsonb("stats").$type<Record<string, unknown>>(),
-  width: serial("width").default(1200),
-  height: serial("height").default(800),
+  width: integer("width").default(1200), // Perubahan: integer
+  height: integer("height").default(800), // Perubahan: integer
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export type GeneratedMap = typeof generatedMaps.$inferSelect;
-export type InsertGeneratedMap = typeof generatedMaps.$inferInsert;
-
-// Automation rules for scheduled map generation
 export const automationRules = pgTable("automationRules", {
   id: serial("id").primaryKey(),
-  userId: serial("userId").notNull(),
+  userId: integer("userId").notNull(), // Perubahan: integer
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  datasetId: serial("datasetId"),
+  datasetId: integer("datasetId"), // Perubahan: integer
   mapType: varchar("mapType", { length: 64 }),
   scheduleType: varchar("scheduleType", { length: 20 }).$type<typeof scheduleTypeEnum[number]>().default("manual"),
   scheduleConfig: jsonb("scheduleConfig").$type<Record<string, unknown>>(),
   isActive: boolean("isActive").default(true),
   lastRunAt: timestamp("lastRunAt"),
   nextRunAt: timestamp("nextRunAt"),
-  runCount: serial("runCount").default(0),
+  runCount: integer("runCount").default(0), // Perubahan: integer
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export type AutomationRule = typeof automationRules.$inferSelect;
-export type InsertAutomationRule = typeof automationRules.$inferInsert;
-
-// System activity log
 export const activityLog = pgTable("activityLog", {
   id: serial("id").primaryKey(),
-  userId: serial("userId"),
+  userId: integer("userId"), // Perubahan: integer
   action: varchar("action", { length: 128 }).notNull(),
   entityType: varchar("entityType", { length: 64 }),
-  entityId: serial("entityId"),
+  entityId: integer("entityId"), // Perubahan: integer
   details: jsonb("details").$type<Record<string, unknown>>(),
   ipAddress: varchar("ipAddress", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type Dataset = typeof datasets.$inferSelect;
+export type InsertDataset = typeof datasets.$inferInsert;
+export type MapRequest = typeof mapRequests.$inferSelect;
+export type InsertMapRequest = typeof mapRequests.$inferInsert;
+export type GeneratedMap = typeof generatedMaps.$inferSelect;
+export type InsertGeneratedMap = typeof generatedMaps.$inferInsert;
+export type AutomationRule = typeof automationRules.$inferSelect;
+export type InsertAutomationRule = typeof automationRules.$inferInsert;
 export type ActivityLog = typeof activityLog.$inferSelect;
